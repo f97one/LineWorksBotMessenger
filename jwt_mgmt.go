@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/f97one/LineWorksBotMessenger/utils"
@@ -15,14 +16,14 @@ import (
 
 type TokenResponse struct {
 	AccessToken string `json:"access_token"`
-	TokenType string `json:"token_type"`
-	ExpiresIn int `json:"expires_in"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   int    `json:"expires_in"`
 }
 
 type ErrorResponse struct {
 	Message string `json:"message"`
-	Detail string `json:"detail"`
-	Code string `json:"code"`
+	Detail  string `json:"detail"`
+	Code    string `json:"code"`
 }
 
 func createAuthToken(conf utils.Config, authKeyPath string) (string, error) {
@@ -86,6 +87,11 @@ func getAccessToken(conf utils.Config, authToken string) (string, error) {
 	}
 	defer resp.Body.Close()
 
+	err = parseStatusError(resp)
+	if err != nil {
+		return "", err
+	}
+
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
@@ -95,7 +101,27 @@ func getAccessToken(conf utils.Config, authToken string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	err = parseStatusError(resp)
+	if err != nil {
+		return "", err
+	}
 
-	//log.Println(tokenResp)
 	return tokenResp.AccessToken, nil
+}
+
+func parseStatusError(resp *http.Response) error {
+	if resp.StatusCode >= 400 {
+		errBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		var errResp ErrorResponse
+		err = json.Unmarshal(errBody, &errResp)
+		if err != nil {
+			return err
+		}
+		msg := fmt.Sprintf("Error : %s : %s\ndetail : %s\n", errResp.Code, errResp.Message, errResp.Detail)
+		return errors.New(msg)
+	}
+	return nil
 }
