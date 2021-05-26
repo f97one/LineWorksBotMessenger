@@ -57,10 +57,10 @@ func main() {
 		exitOnEmpty("Messages to speak must not be empty")
 	}
 
-	log.Printf("得られた値 : confFilePath = %s\n", confFilePath)
-	log.Printf("得られた値 : authKeyPath = %s\n", authKeyPath)
-	log.Printf("得られた値 : destUsername = %s\n", destUsername)
-	log.Printf("得られた値 : msg = %s\n", messages)
+	//log.Printf("得られた値 : confFilePath = %s\n", confFilePath)
+	//log.Printf("得られた値 : authKeyPath = %s\n", authKeyPath)
+	//log.Printf("得られた値 : destUsername = %s\n", destUsername)
+	//log.Printf("得られた値 : msg = %s\n", messages)
 
 	conf, err := utils.Load(filepath.Clean(confFilePath))
 	if err != nil {
