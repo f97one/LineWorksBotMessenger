@@ -14,41 +14,48 @@ func main() {
 	//   -c 設定ファイルのパス
 	//   -k 認証キーファイルのパス
 	//   -d 宛先のユーザー名
-	//   -m しゃべらせるメッセージ
-	confFilePath := flag.String("c", "", "configuration file path")
-	authKeyPath := flag.String("k", "", "Authorization Key file path")
-	destUsername := flag.String("d", "", "Destination username to speak")
-	msg := flag.String("m", "", "Messages to speak")
+	var confFilePath string
+	var authKeyPath string
+	var destUsername string
+	flag.StringVar(&confFilePath, "c", "", "configuration file path")
+	flag.StringVar(&authKeyPath, "k", "", "Authorization Key file path")
+	flag.StringVar(&destUsername, "d", "", "Destination username to speak")
+
+	// しゃべらせるメッセージは名前なし引数にする
+	if len(flag.Args()) == 0 {
+		exitOnEmpty("Messages to speak must not be empty")
+	}
+	msg := flag.Args()[0]
 
 	flag.Parse()
 
-	if confFilePath == nil || len(*confFilePath) == 0 {
+	if len(confFilePath) == 0 {
 		exitOnEmpty("configuration file path must not be empty")
 	}
 
-	if authKeyPath == nil || len(*authKeyPath) == 0 {
+	if len(authKeyPath) == 0 {
 		exitOnEmpty("Authorization Key file path must not be empty")
 	}
 
-	if destUsername == nil || len(*destUsername) == 0 {
+	if len(destUsername) == 0 {
 		exitOnEmpty("Destination username to speak must not be empty")
 	}
 
-	if msg == nil || len(*msg) == 0 {
+	if len(msg) == 0 {
 		exitOnEmpty("Messages to speak must not be empty")
 	}
 
-	//log.Printf("得られた値 : confFilePath = %s\n", *confFilePath)
-	//log.Printf("得られた値 : authKeyPath = %s\n", *authKeyPath)
-	//log.Printf("得られた値 : destUsername = %s\n", *destUsername)
-	//log.Printf("得られた値 : msg = %s\n", *msg)
+	log.Printf("得られた値 : confFilePath = %s\n", confFilePath)
+	log.Printf("得られた値 : authKeyPath = %s\n", authKeyPath)
+	log.Printf("得られた値 : destUsername = %s\n", destUsername)
+	log.Printf("得られた値 : msg = %s\n", msg)
 
-	conf, err := utils.Load(filepath.Clean(*confFilePath))
+	conf, err := utils.Load(filepath.Clean(confFilePath))
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	authToken, err := createAuthToken(conf, *authKeyPath)
+	authToken, err := createAuthToken(conf, authKeyPath)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -57,7 +64,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = sendToUser(accessToken, conf, *destUsername, *msg)
+	err = sendToUser(accessToken, conf, destUsername, msg)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -66,7 +73,10 @@ func main() {
 }
 
 func exitOnEmpty(msg string) {
-	fmt.Fprintln(os.Stderr, msg)
-	flag.Usage()
+	fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
+	fmt.Fprintf(os.Stderr, "Usage: %s [options] messages\n", filepath.Base(os.Args[0]))
+	flag.PrintDefaults()
+	fmt.Fprintln(os.Stderr, "  messages")
+	fmt.Fprintln(os.Stderr, "        messages to make LINE WORKS Bot speak")
 	os.Exit(2)
 }
