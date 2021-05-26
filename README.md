@@ -1,0 +1,2 @@
+# LineWorksBotMessenger
+LINE WORKSにBot投稿させるCLIアプリケーション
