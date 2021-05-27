@@ -101,10 +101,6 @@ func getAccessToken(conf utils.Config, authToken string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = parseStatusError(resp)
-	if err != nil {
-		return "", err
-	}
 
 	return tokenResp.AccessToken, nil
 }
@@ -115,11 +111,13 @@ func parseStatusError(resp *http.Response) error {
 		if err != nil {
 			return err
 		}
+
 		var errResp ErrorResponse
 		err = json.Unmarshal(errBody, &errResp)
 		if err != nil {
 			return err
 		}
+
 		msg := fmt.Sprintf("Error : %s : %s\ndetail : %s\n", errResp.Code, errResp.Message, errResp.Detail)
 		return errors.New(msg)
 	}

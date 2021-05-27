@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/f97one/LineWorksBotMessenger/utils"
-	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -54,11 +53,6 @@ func sendToUser(accessToken string, conf utils.Config, accountId string, msg str
 		return err
 	}
 	err = parseStatusError(resp)
-	if err != nil {
-		return err
-	}
-
-	_, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
