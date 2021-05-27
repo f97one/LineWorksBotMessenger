@@ -47,4 +47,4 @@ configuration file format is below:
 
 ## Licensing
 
-This app is licensed under the GPL v3.
+This app is licensed under the BSD-2-Clause License.
