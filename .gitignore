@@ -24,6 +24,12 @@
 
 settings-*.json
 !settings-sample.json
+v2settings-*.json
+!v2settings-sample.json
 
 # private key file
 private_*.key
+
+# coverage report
+./profile
+./profile.html
