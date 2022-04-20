@@ -1,4 +1,4 @@
-package utils
+package v1
 
 import (
 	"encoding/json"
@@ -8,10 +8,10 @@ import (
 )
 
 type Config struct {
-	ApiId string `json:"api_id"`
+	ApiId       string `json:"api_id"`
 	ConsumerKey string `json:"consumer_key"`
-	ServerId string `json:"server_id"`
-	BotNo int `json:"bot_no"`
+	ServerId    string `json:"server_id"`
+	BotNo       int    `json:"bot_no"`
 }
 
 var config *Config

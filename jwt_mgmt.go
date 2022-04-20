@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/f97one/LineWorksBotMessenger/utils"
+	"github.com/f97one/LineWorksBotMessenger/utils/v1"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -26,7 +26,7 @@ type ErrorResponse struct {
 	Code    string `json:"code"`
 }
 
-func createAuthToken(conf utils.Config, authKeyPath string) (string, error) {
+func createAuthToken(conf v1.Config, authKeyPath string) (string, error) {
 	absAuthKeyPath, err := filepath.Abs(filepath.Clean(authKeyPath))
 	if err != nil {
 		return "", err
@@ -61,7 +61,7 @@ func createAuthToken(conf utils.Config, authKeyPath string) (string, error) {
 	return tokenString, nil
 }
 
-func getAccessToken(conf utils.Config, authToken string) (string, error) {
+func getAccessToken(conf v1.Config, authToken string) (string, error) {
 	tokenEndpoint := fmt.Sprintf("https://auth.worksmobile.com/b/%s/server/token", conf.ApiId)
 
 	// body

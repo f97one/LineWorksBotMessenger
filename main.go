@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/f97one/LineWorksBotMessenger/utils"
+	"github.com/f97one/LineWorksBotMessenger/utils/v1"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"log"
@@ -62,7 +62,7 @@ func main() {
 	//log.Printf("得られた値 : destUsername = %s\n", destUsername)
 	//log.Printf("得られた値 : msg = %s\n", messages)
 
-	conf, err := utils.Load(filepath.Clean(confFilePath))
+	conf, err := v1.Load(filepath.Clean(confFilePath))
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/f97one/LineWorksBotMessenger/utils"
+	"github.com/f97one/LineWorksBotMessenger/utils/v1"
 	"net/http"
 	"time"
 )
 
 type TalkPayload struct {
-	AccountId string      `json:"accountId"`
-	Content   TalkContent `json:"content"`
+	Content TalkContent `json:"content"`
 }
 
 type TalkContent struct {
@@ -19,9 +18,8 @@ type TalkContent struct {
 	Text string `json:"text"`
 }
 
-func NewTalkPayload(accountId string, msg string) TalkPayload {
+func NewTalkPayload(msg string) TalkPayload {
 	return TalkPayload{
-		AccountId: accountId,
 		Content: TalkContent{
 			Type: "text",
 			Text: msg,
@@ -29,10 +27,10 @@ func NewTalkPayload(accountId string, msg string) TalkPayload {
 	}
 }
 
-func sendToUser(accessToken string, conf utils.Config, accountId string, msg string) error {
+func sendToUser(accessToken string, conf v1.Config, accountId string, msg string) error {
 	textEndpoint := fmt.Sprintf("https://apis.worksmobile.com/r/%s/message/v1/bot/%d/message/push", conf.ApiId, conf.BotNo)
 
-	talkPayload := NewTalkPayload(accountId, msg)
+	talkPayload := NewTalkPayload(msg)
 	body, err := json.Marshal(talkPayload)
 	if err != nil {
 		return err
