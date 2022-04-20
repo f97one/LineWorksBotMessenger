@@ -1,0 +1,6 @@
+{
+  "client_id": "123456789",
+  "client_secret": "abcdefghijklmnopqrstuvwxyz",
+  "service_account": "xxxxx.serviceaccount@example-company",
+  "bot_id": 9999999
+}
