@@ -1,10 +1,15 @@
 package v2
 
 import (
+	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
+	"io"
 	"io/ioutil"
+	"log"
+	"net/http"
 	"net/url"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -122,6 +127,39 @@ func (t *TokenRequest) ToForm() url.Values {
 
 // GetAccessToken : TokenRequest をもとに v2 token endpoint を呼び出してアクセストークンを取得する。
 func (t *TokenRequest) GetAccessToken() (TokenResponse, error) {
+	endpoint := "https://auth.worksmobile.com/oauth2/v2.0/token"
+	body := strings.NewReader(t.ToForm().Encode())
 
-	return TokenResponse{}, nil
+	req, err := http.NewRequest(http.MethodPost, endpoint, body)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+	// content-type
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
+
+	client := &http.Client{}
+	client.Timeout = time.Second * 30
+	resp, err := client.Do(req)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(resp.Body)
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	var tokenResponse TokenResponse
+	err = json.Unmarshal(respBody, &tokenResponse)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	return tokenResponse, nil
 }

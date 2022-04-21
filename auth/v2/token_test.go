@@ -1,7 +1,11 @@
 package v2
 
 import (
+	"net/http"
+	"net/url"
 	"testing"
+
+	"github.com/jarcoal/httpmock"
 )
 
 func TestGrantType_String(t *testing.T) {
@@ -91,5 +95,82 @@ func TestTokenRequest_ToForm_Refresh(t *testing.T) {
 	}
 	if refreshValues.Get("assertion") != "" {
 		t.Errorf("TokenRequest.ToForm() = %v, want %v", refreshValues.Get("assertion"), "")
+	}
+}
+
+func TestTokenRequest_GetAccessToken_Valid(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	// mock response
+	mockResp := &TokenResponse{
+		AccessToken:  "dummy_access_token",
+		RefreshToken: "dummy_refresh_token",
+		TokenType:    "Bearer",
+		ExpiresIn:    86400,
+		Scope:        "Bot",
+	}
+	// リクエスト検証変数
+	var reqForm url.Values
+
+	httpmock.RegisterResponder(http.MethodPost, "https://auth.worksmobile.com/oauth2/v2.0/token",
+		func(req *http.Request) (*http.Response, error) {
+			if err := req.ParseForm(); err != nil {
+				t.Fatal(err)
+			}
+			reqForm = req.Form
+
+			return httpmock.NewJsonResponse(200, mockResp)
+		})
+
+	req := &TokenRequest{
+		Assertion:    "dummy_assertion",
+		RefreshToken: "",
+		GrantType:    GrantTypeInitial.String(),
+		ClientId:     "dummy_client_id",
+		ClientSecret: "dummy_client_secret",
+		Scope:        "Bot,Bot.read",
+	}
+
+	response, err := req.GetAccessToken()
+
+	// リクエストパラメータが正しいことを確認
+	if reqForm.Get("assertion") != "dummy_assertion" {
+		t.Errorf("TokenRequest.GetAccessToken() = %v, want %v", reqForm.Get("assertion"), "dummy_assertion")
+	}
+	if reqForm.Get("grant_type") != GrantTypeInitial.String() {
+		t.Errorf("TokenRequest.GetAccessToken() = %v, want %v", reqForm.Get("grant_type"), "assertion")
+	}
+	if reqForm.Get("client_id") != "dummy_client_id" {
+		t.Errorf("TokenRequest.GetAccessToken() = %v, want %v", reqForm.Get("client_id"), "dummy_client_id")
+	}
+	if reqForm.Get("client_secret") != "dummy_client_secret" {
+		t.Errorf("TokenRequest.GetAccessToken() = %v, want %v", reqForm.Get("client_secret"), "dummy_client_secret")
+	}
+	if reqForm.Get("scope") != "Bot,Bot.read" {
+		t.Errorf("TokenRequest.GetAccessToken() = %v, want %v", reqForm.Get("scope"), "Bot,Bot.read")
+	}
+	if reqForm.Get("refresh_token") != "" {
+		t.Errorf("TokenRequest.GetAccessToken() = %v, want %v", reqForm.Get("refresh_token"), "")
+	}
+
+	// レスポンスが正しいことを確認
+	if err != nil {
+		t.Errorf("TokenRequest.GetAccessToken() error = %v", err)
+	}
+	if response.AccessToken != "dummy_access_token" {
+		t.Errorf("TokenRequest.GetAccessToken() = %v, want %v", response.AccessToken, "dummy_access_token")
+	}
+	if response.RefreshToken != "dummy_refresh_token" {
+		t.Errorf("TokenRequest.GetAccessToken() = %v, want %v", response.RefreshToken, "dummy_refresh_token")
+	}
+	if response.TokenType != "Bearer" {
+		t.Errorf("TokenRequest.GetAccessToken() = %v, want %v", response.TokenType, "Bearer")
+	}
+	if response.ExpiresIn != 86400 {
+		t.Errorf("TokenRequest.GetAccessToken() = %v, want %v", response.ExpiresIn, 86400)
+	}
+	if response.Scope != "Bot" {
+		t.Errorf("TokenRequest.GetAccessToken() = %v, want %v", response.Scope, "Bot,Bot.read")
 	}
 }
