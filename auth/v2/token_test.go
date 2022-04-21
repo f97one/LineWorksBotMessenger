@@ -1,7 +1,6 @@
 package v2
 
 import (
-	"encoding/json"
 	"testing"
 )
 
@@ -31,40 +30,66 @@ func TestGrantType_String(t *testing.T) {
 	}
 }
 
-func Test_GeneratesInitialRequestAsJson(t *testing.T) {
-	tokenReq := TokenRequest{
-		Assertion:    "DUMMY_ASSERTION",
+func TestTokenRequest_ToForm_Initial(t *testing.T) {
+	initReq := &TokenRequest{
+		Assertion:    "dummy_assertion",
 		RefreshToken: "",
 		GrantType:    GrantTypeInitial.String(),
-		ClientId:     "DUMMY_CLIENT_ID",
-		ClientSecret: "DUMMY_CLIENT_SECRET",
-		Scope:        "Bot",
+		ClientId:     "dummy_client_id",
+		ClientSecret: "dummy_client_secret",
+		Scope:        "Bot,Bot.read",
 	}
-	b, err := json.Marshal(tokenReq)
-	if err != nil {
-		t.Errorf("json.Marshal(%v) = %v", tokenReq, err)
+
+	initValues := initReq.ToForm()
+
+	if initValues.Get("assertion") != "dummy_assertion" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", initValues.Get("assertion"), "dummy_assertion")
 	}
-	expected := `{"assertion":"DUMMY_ASSERTION","grant_type":"urn:ietf:params:oauth:grant-type:jwt-bearer","client_id":"DUMMY_CLIENT_ID","client_secret":"DUMMY_CLIENT_SECRET","scope":"Bot"}`
-	if string(b) != expected {
-		t.Errorf("json.Marshal(%v) = %v, want %v", tokenReq, string(b), expected)
+	if initValues.Get("grant_type") != "urn:ietf:params:oauth:grant-type:jwt-bearer" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", initValues.Get("grant_type"), "urn:ietf:params:oauth:grant-type:jwt-bearer")
+	}
+	if initValues.Get("client_id") != "dummy_client_id" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", initValues.Get("client_id"), "dummy_client_id")
+	}
+	if initValues.Get("client_secret") != "dummy_client_secret" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", initValues.Get("client_secret"), "dummy_client_secret")
+	}
+	if initValues.Get("scope") != "Bot,Bot.read" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", initValues.Get("scope"), "Bot,Bot.read")
+	}
+	if initValues.Get("refresh_token") != "" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", initValues.Get("refresh_token"), "")
 	}
 }
 
-func Test_GeneratesRefreshRequestAsJson(t *testing.T) {
-	tokenReq := TokenRequest{
+func TestTokenRequest_ToForm_Refresh(t *testing.T) {
+	refreshReq := &TokenRequest{
 		Assertion:    "",
-		RefreshToken: "DUMMY_REFRESH_TOKEN",
+		RefreshToken: "dummy_refresh_token",
 		GrantType:    GrantTypeRefresh.String(),
-		ClientId:     "DUMMY_CLIENT_ID",
-		ClientSecret: "DUMMY_CLIENT_SECRET",
+		ClientId:     "dummy_client_id",
+		ClientSecret: "dummy_client_secret",
 		Scope:        "",
 	}
-	b, err := json.Marshal(tokenReq)
-	if err != nil {
-		t.Errorf("json.Marshal(%v) = %v", tokenReq, err)
+
+	refreshValues := refreshReq.ToForm()
+
+	if refreshValues.Get("refresh_token") != "dummy_refresh_token" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", refreshValues.Get("refresh_token"), "dummy_refresh_token")
 	}
-	expected := `{"refresh_token":"DUMMY_REFRESH_TOKEN","grant_type":"refresh_token","client_id":"DUMMY_CLIENT_ID","client_secret":"DUMMY_CLIENT_SECRET"}`
-	if string(b) != expected {
-		t.Errorf("json.Marshal(%v) = %v, want %v", tokenReq, string(b), expected)
+	if refreshValues.Get("grant_type") != "refresh_token" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", refreshValues.Get("grant_type"), "refresh_token")
+	}
+	if refreshValues.Get("client_id") != "dummy_client_id" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", refreshValues.Get("client_id"), "dummy_client_id")
+	}
+	if refreshValues.Get("client_secret") != "dummy_client_secret" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", refreshValues.Get("client_secret"), "dummy_client_secret")
+	}
+	if refreshValues.Get("scope") != "" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", refreshValues.Get("scope"), "")
+	}
+	if refreshValues.Get("assertion") != "" {
+		t.Errorf("TokenRequest.ToForm() = %v, want %v", refreshValues.Get("assertion"), "")
 	}
 }

@@ -1,5 +1,13 @@
 package v2
 
+import (
+	"github.com/dgrijalva/jwt-go"
+	"io/ioutil"
+	"net/url"
+	"path/filepath"
+	"time"
+)
+
 // GrantType represents the grant type used in the OAuth2 protocol.
 type GrantType int
 
@@ -50,4 +58,70 @@ type TokenResponse struct {
 	ExpiresIn int `json:"expires_in"`
 	// Scope is the scope of the token.
 	Scope string `json:"scope"`
+}
+
+// GenerateAuthToken : clientId, serviceAccount から keyFilePath の秘密鍵を用いて署名された JWT を生成する。
+func GenerateAuthToken(clientId, serviceAccount string, keyFilePath string) (string, error) {
+	absKeyPath, err := filepath.Abs(filepath.Clean(keyFilePath))
+	if err != nil {
+		return "", err
+	}
+
+	// RSA秘密鍵抽出
+	signBytes, err := ioutil.ReadFile(absKeyPath)
+	if err != nil {
+		return "", err
+	}
+	signKey, err := jwt.ParseRSAPrivateKeyFromPEM(signBytes)
+	if err != nil {
+		return "", err
+	}
+
+	// 発行日を現在日時、有効期限はその30分後に設定
+	issuedAt := time.Now().Unix()
+	expiresAt := time.Now().Add(30 * time.Minute).Unix()
+
+	token := jwt.New(jwt.SigningMethodRS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["iss"] = clientId
+	claims["sub"] = serviceAccount
+	claims["iat"] = issuedAt
+	claims["exp"] = expiresAt
+
+	tokenString, err := token.SignedString(signKey)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+// ToForm : TokenRequest を application/x-www-form-urlencoded で使う url.Values に変換する。
+func (t *TokenRequest) ToForm() url.Values {
+	form := url.Values{}
+	// assertion
+	if t.Assertion != "" {
+		form.Add("assertion", t.Assertion)
+	}
+	// refresh_token
+	if t.RefreshToken != "" {
+		form.Add("refresh_token", t.RefreshToken)
+	}
+	// grant_type
+	form.Add("grant_type", t.GrantType)
+	// client_id
+	form.Add("client_id", t.ClientId)
+	// client_secret
+	form.Add("client_secret", t.ClientSecret)
+	// scope
+	if t.Scope != "" {
+		form.Add("scope", t.Scope)
+	}
+	return form
+}
+
+// GetAccessToken : TokenRequest をもとに v2 token endpoint を呼び出してアクセストークンを取得する。
+func (t *TokenRequest) GetAccessToken() (TokenResponse, error) {
+
+	return TokenResponse{}, nil
 }
