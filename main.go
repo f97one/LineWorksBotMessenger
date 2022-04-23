@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/f97one/LineWorksBotMessenger/utils/v1"
+	authV2 "github.com/f97one/LineWorksBotMessenger/auth/v2"
+	botV2 "github.com/f97one/LineWorksBotMessenger/bot/v2"
+	utilsV2 "github.com/f97one/LineWorksBotMessenger/utils/v2"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"log"
@@ -17,13 +19,16 @@ func main() {
 	//   -c 設定ファイルのパス
 	//   -k 認証キーファイルのパス
 	//   -d 宛先のユーザー名
+	//   -r 宛先のトークルームID
 	var confFilePath string
 	var authKeyPath string
 	var destUsername string
+	var destRoomId string
 	var messages string
 	flag.StringVar(&confFilePath, "c", "", "configuration file path")
 	flag.StringVar(&authKeyPath, "k", "", "Authorization Key file path")
 	flag.StringVar(&destUsername, "d", "", "Destination username to speak")
+	flag.StringVar(&destRoomId, "r", "", "Destination talk room id to speak")
 
 	flag.Parse()
 
@@ -33,7 +38,7 @@ func main() {
 	}
 
 	if len(messages) == 0 {
-		if terminal.IsTerminal(int(syscall.Stdin)) {
+		if terminal.IsTerminal(syscall.Stdin) {
 			exitOnEmpty("Messages to speak must not be empty")
 		}
 		messages = readFromStdin()
@@ -49,8 +54,12 @@ func main() {
 		exitOnEmpty("Authorization Key file path must not be empty")
 	}
 
-	if len(destUsername) == 0 {
-		exitOnEmpty("Destination username to speak must not be empty")
+	if len(destUsername) == 0 && len(destRoomId) == 0 {
+		exitOnEmpty("Destination username or talk room id to speak must not be empty")
+	}
+
+	if len(destUsername) > 0 && len(destRoomId) > 0 {
+		exitOnEmpty("Destination username and talk room id to speak must not be both set")
 	}
 
 	if len(messages) == 0 {
@@ -62,21 +71,38 @@ func main() {
 	//log.Printf("得られた値 : destUsername = %s\n", destUsername)
 	//log.Printf("得られた値 : msg = %s\n", messages)
 
-	conf, err := v1.Load(filepath.Clean(confFilePath))
+	conf, err := utilsV2.Load(filepath.Clean(confFilePath))
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	authToken, err := createAuthToken(conf, authKeyPath)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	accessToken, err := getAccessToken(conf, authToken)
+	assertion, err := authV2.GenerateAuthToken(conf.ClientId, conf.ServiceAccount, authKeyPath)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = sendToUser(accessToken, conf, destUsername, messages)
+	tokenRequest := authV2.TokenRequest{
+		Assertion:    assertion,
+		GrantType:    authV2.GrantTypeInitial.String(),
+		ClientId:     conf.ClientId,
+		ClientSecret: conf.ClientSecret,
+		Scope:        "Bot,Bot.read",
+	}
+
+	tokenResp, err := tokenRequest.GetAccessToken()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	text := botV2.NewI18nText(botV2.SupportedLocaleEnglish, messages)
+	i18NTexts := []botV2.I18NText{text}
+	payload := botV2.NewLocalizedTextPayload(i18NTexts, botV2.SupportedLocaleEnglish)
+
+	if len(destUsername) == 0 {
+		err = payload.SendToRoom(destRoomId, tokenResp.AccessToken, conf)
+	} else {
+		err = payload.SendToUser(destUsername, tokenResp.AccessToken, conf)
+	}
 	if err != nil {
 		log.Fatalln(err)
 	}
