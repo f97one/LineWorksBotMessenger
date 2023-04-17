@@ -2,6 +2,7 @@ package v2
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"io"
 	"io/ioutil"
@@ -159,6 +160,9 @@ func (t *TokenRequest) GetAccessToken() (TokenResponse, error) {
 	err = json.Unmarshal(respBody, &tokenResponse)
 	if err != nil {
 		return TokenResponse{}, err
+	}
+	if len(tokenResponse.AccessToken) == 0 {
+		return TokenResponse{}, errors.New("access token could not issue, description = " + string(respBody))
 	}
 
 	return tokenResponse, nil
