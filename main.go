@@ -38,7 +38,7 @@ func main() {
 	}
 
 	if len(messages) == 0 {
-		if terminal.IsTerminal(syscall.Stdin) {
+		if terminal.IsTerminal(int(syscall.Stdin)) {
 			exitOnEmpty("Messages to speak must not be empty")
 		}
 		messages = readFromStdin()
@@ -86,7 +86,7 @@ func main() {
 		GrantType:    authV2.GrantTypeInitial.String(),
 		ClientId:     conf.ClientId,
 		ClientSecret: conf.ClientSecret,
-		Scope:        "Bot,Bot.read",
+		Scope:        "bot bot.read",
 	}
 
 	tokenResp, err := tokenRequest.GetAccessToken()
